@@ -1,5 +1,7 @@
 library(tidyverse)
 library(rvest)
+library(lubridate)
+
 
 ##Load data
 ############################## State Water Project
@@ -138,7 +140,16 @@ pull_salvage <- function(salvageURL = "http://www.cbr.washington.edu/sacramento/
 
 salvage_data <- suppressWarnings(pull_salvage())
 
-#Rename some of the data columns, join DNA data
-Data_combined_with_salvage <- salvage_data %>% 
+#Rename some of the data columns, summarize by date, join DNA data
+str(salvage_data)
+
+salvage_data_daily <- salvage_data %>% 
   rename(SampleTime='Sample Time',LAD_Race='LAD Race',SampleFraction='Sample Fraction',ExpandedSalvage='Expanded Salvage',LAD_Loss='LAD Loss') %>%
-  mutate(SampleDate = as.Date(SampleTime)) %>% left_join(Data_combined)
+  mutate(SampleDate = as.Date(SampleTime)) %>% group_by(SampleDate,Facility,LAD_Race) %>% 
+  summarise(nfish=sum(nfish),ExpandedSalvage=sum(ExpandedSalvage),LAD_Loss=sum(LAD_Loss)) %>% filter(year(SampleDate)>=2010)
+  #left_join(Data_combined)
+
+Data_combined_with_salvage<- full_join(salvage_data_daily %>% filter(LAD_Race == "Winter"), Data_combined %>% filter(GeneticID == "Winter"))
+
+#Export
+write.csv(Data_combined_with_salvage,file="Winter-run_LAD_vs_Genetic_2010.csv",row.names = F)
