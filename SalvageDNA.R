@@ -4,7 +4,6 @@ library(lubridate)
 library(splitstackshape)
 library(data.table)
 
-##Load data
 ##################### Load Salvage Count Data from SacPAS
 
 #Function adjusted from Trinh's code to pull salvage datasets from SacPAS
@@ -37,6 +36,7 @@ pull_salvage <- function(salvageURL = "http://www.cbr.washington.edu/sacramento/
 #Run actual function to load data
 salvage_data <- suppressWarnings(pull_salvage())
 
+########## Prep salvage data
 
 #Rename columns to make it easier to work in R and divide Loss + Expanded Salvage by nfish
 salvage_data_adjusted<- salvage_data %>%
@@ -55,11 +55,9 @@ salvage_data_adjusted<- salvage_data_adjusted%>%
   # ungroup to prevent unexpected behaviour down stream
   dplyr::ungroup()
 
-str(salvage_data_adjusted)
 #Adjust Sample Time to the proper format
-salvage_data_adjusted$SampleTime <- as.POSIXlt(salvage_data_adjusted$SampleTime,format='%Y-%m-%d %H:%M:%S')
+salvage_data_adjusted$SampleTime <- as.POSIXlt(salvage_data_adjusted$SampleTime,format='%Y-%m-%d  %H:%M:%S', tz = "UTC")
 
-str(salvage_data_adjusted)
 
 #################################### Read genetic data
 
@@ -68,7 +66,7 @@ genetic_data_SWP <-read.csv("SWP-sizebydate-2010-21.csv")
 
 genetic_data_combined<-bind_rows(genetic_data_CVP,genetic_data_SWP) %>% rename(SampleTime=SampleDate2)
 
-genetic_data_combined$SampleTime <- as.POSIXlt(genetic_data_combined$SampleTime,format='%m/%d/%Y %H:%M')
+genetic_data_combined$SampleTime <- as.POSIXlt(genetic_data_combined$SampleTime,format='%m/%d/%Y %H:%M', tz = "UTC")
 
 genetic_data_combined<- genetic_data_combined%>%
   # add facility
@@ -84,14 +82,57 @@ genetic_data_combined<- genetic_data_combined%>%
   dplyr::ungroup() %>%
   dplyr::rename(Length=ForkLength)
 
-str(genetic_data_combined)
+# Isolate data with NA sample time
+genetic_data_NA_sampletime<- genetic_data_combined %>% filter(is.na(SampleTime))
 
-#######Combine the two data sets
-combined_data<-salvage_data_adjusted %>% left_join(genetic_data_combined)
+# Remove NA sample time from data frame
+genetic_data_combined <- genetic_data_combined %>% filter(!is.na(SampleTime))
 
+####### Combine the two data sets
+combined_data_v1<-left_join(salvage_data_adjusted,genetic_data_combined)
+
+# About 1/3 of the data are not matched up to the salvage database
 unpaired_genetic_data<-full_join(salvage_data_adjusted,genetic_data_combined) %>% filter(is.na(LAD_Race))
+count(unpaired_genetic_data)/count(genetic_data_combined)
 
-paired_genetic_data<-combined_data %>% filter(!is.na(GeneticID))
+######## Try moving up by 12 hours
+# Add 12 hours from unpaired genetic data to see if that leads to more matches
+unpaired_genetic_data_plus12<- unpaired_genetic_data
+unpaired_genetic_data_plus12$SampleTime = unpaired_genetic_data_plus12$SampleTime + 12*60*60
+drops <- c("Species", "Adipose Clip", "LAD_Race", "Count Duration (minutes)", "Pumping Duration (minutes)", "SampleFraction", "Study Type","ExpandedSalvage", "LAD_Loss")
+unpaired_genetic_data_plus12<-unpaired_genetic_data_plus12[ , !(names(unpaired_genetic_data_plus12) %in% drops)]
+
+### Recombine genetic datasets and rejoin
+paired_genetic_data <-left_join(salvage_data_adjusted,genetic_data_combined) %>% filter(!is.na(GeneticID))
+paired_genetic_data<-paired_genetic_data[ , !(names(paired_genetic_data) %in% drops)]
+# Now unpaired data have been readjusted by 12 hours
+genetic_data_recombined<-bind_rows(paired_genetic_data,unpaired_genetic_data_plus12)
+
+#Add *fixed* dataset back to genetic dataset
+combined_data_v2 <- left_join(salvage_data_adjusted,genetic_data_recombined)
+
+unpaired_genetic_data_v2<-full_join(salvage_data_adjusted,genetic_data_recombined) %>% filter(is.na(LAD_Race))
+unpaired_genetic_data_v2<-unpaired_genetic_data_v2[ , !(names(unpaired_genetic_data_v2) %in% drops)]
+unpaired_genetic_data_v2$SampleTime<- unpaired_genetic_data_v2$SampleTime - 12*60*60
+
+write.csv(unpaired_genetic_data,file="Unpaired_Genetic_data_2022-02-23.csv",row.names = F)
+
+
+
+#########################################################Not used
+
+test<-inner_join(combined_data_v1,combined_data_v2)
+test<-genetic_data_recombined %>% filter(is.na(SampleTime))
+
+
+
+
+
+paired_genetic_data_v2<-combined_data %>% filter(!is.na(GeneticID))
+
+unpaired_genetic_data_round2 <-left_join(genetic_data_combined_fixed,salvage_data_adjusted) %>% filter(is.na(LAD_Race))
+
+
 
 
 write.csv(unpaired_genetic_data,file="Unpaired_Genetic_data_2022-02-18.csv",row.names = F)
