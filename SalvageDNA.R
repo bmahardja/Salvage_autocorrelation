@@ -84,6 +84,8 @@ genetic_data_combined<- genetic_data_combined%>%
 
 # Isolate data with NA sample time
 genetic_data_NA_sampletime<- genetic_data_combined %>% filter(is.na(SampleTime))
+write.csv(genetic_data_NA_sampletime,file="Missingsampletime_2022-02-23.csv",row.names = F)
+
 
 # Remove NA sample time from data frame
 genetic_data_combined <- genetic_data_combined %>% filter(!is.na(SampleTime))

@@ -1,0 +1,5 @@
+"ID","SampleDate","Length","Julian","GeneticID","PosProb","Ots28","LengthByDate","SampleTime","Facility","duplicateID"
+"C210001CVP","1/18/2021",211,203,"Fall/LateFall",0.993,"early","Late Fall",NA,"CVP",1
+"C210002CVP","2/2/2021",38,218,"Fall/LateFall",0.667,"late","Fall",NA,"CVP",1
+"C210003CVP","2/8/2021",154,224,"Fall/LateFall",0.959,"late","Winter",NA,"CVP",1
+"C210004CVP","3/8/2021",111,252,"Winter",1,"early","Winter",NA,"CVP",1
