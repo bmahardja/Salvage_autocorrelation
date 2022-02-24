@@ -119,7 +119,8 @@ unpaired_genetic_data_v2$SampleTime<- unpaired_genetic_data_v2$SampleTime - 12*6
 
 write.csv(unpaired_genetic_data,file="Unpaired_Genetic_data_2022-02-23.csv",row.names = F)
 
-
+# Save combined dataset to a file
+saveRDS(combined_data_v2, file = "Salvage_DNA_vs_LAD.rds")
 
 #########################################################Not used
 
