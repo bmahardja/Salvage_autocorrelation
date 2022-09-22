@@ -309,7 +309,7 @@ tiff(filename="Figure_ACF_expanded_salvage_Winterrun_2009-2019_dec-may.tiff",
      pointsize=5, #12, 
      res=300,
      compression="lzw")
-acf(salvage_data_edit$expandedSalvage_WRLAD_wild_full_salvage_statInst_spMean_tm1dInstLag0d)
+acf(salvage_data_edit$expandedSalvage_WRLAD_wild_full_salvage_statInst_spMean_tm1dInstLag0d, main="")
 dev.off()
 
 
@@ -321,7 +321,7 @@ tiff(filename="Figure_PACF_expanded_salvage_Winterrun_2009-2019_dec-may.tiff",
      pointsize=5, #12, 
      res=300,
      compression="lzw")
-pacf(salvage_data_edit$expandedSalvage_WRLAD_wild_full_salvage_statInst_spMean_tm1dInstLag0d)
+pacf(salvage_data_edit$expandedSalvage_WRLAD_wild_full_salvage_statInst_spMean_tm1dInstLag0d, main="")
 dev.off()
 
 #Export data for Mike
